@@ -53,5 +53,10 @@ def preference_loss(state_proxy_model , state_proxy_model_old , input_ids , y_wi
 
     return -jnp.mean(jax.nn.log_sigmoid(logits_dpo))
 
+def proxy_nll_loss(teacher_label , proxy_distribution):
+    label_proxy_prob = proxy_distribution(jnp.arange(teacher_label.shape[0]) , teacher_label)
+
+    return -jnp.mean(jnp.log(label_proxy_prob))
+
 def proxy_alignment(teacher_model , proxy_model , input_ids , rng):
     pass
