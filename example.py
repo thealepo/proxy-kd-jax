@@ -26,3 +26,29 @@ if __name__ == "__main__":
     teacher_config = TransformerConfig(VOCAB_SIZE=VOCAB_SIZE , SEQ_LEN=SEQ_LEN , HIDDEN_SIZE=64 , N_HEADS=4 , N_LAYERS=2)
     proxy_config = TransformerConfig(VOCAB_SIZE=VOCAB_SIZE , SEQ_LEN=SEQ_LEN , HIDDEN_SIZE=32 , N_HEADS=4 , N_LAYERS=2)
     student_config = TransformerConfig(VOCAB_SIZE=VOCAB_SIZE , SEQ_LEN=SEQ_LEN , HIDDEN_SIZE=16 , N_HEADS=4 , N_LAYERS=1)
+
+    # Main RNG
+    rng = jax.random.PRNGKey(42)
+
+    # Building the three models
+    teacher_transformer = CausalLanguageModel(teacher_config , rngs=nnx.Rngs(0))
+    teacher_model = BlackBoxTeacher(teacher_transformer , max_new_tokens=MAX_NEW_TOKENS)
+    proxy_model = CausalLanguageModel(proxy_config , rngs=nnx.Rngs(1))
+    student_model = CausalLanguageModel(student_config , rngs=nnx.Rngs(2))
+
+    # Shared prompt set
+    rng , rng_data = jax.random.split(rng)
+    prompt_batches = make_prompts(rng_data , NUM_BATCHES , BATCH , PROMPT_LEN , VOCAB_SIZE)
+
+
+    # PHASE I - Align the Proxy to the Black-Box Teacher (DPO + NLL)
+    print('=== PHASE I: PROXY ALIGNMENT ===')
+    proxy_optimizer = nnx.Optimizer(proxy_model , optax.adam(1e-3) , wrt=nnx.Param)
+    rng , rng_phase1 = jax.random.split(rng)
+    proxy_model = phase1.train(
+        teacher_model , proxy_model , proxy_optimizer , prompt_batches , rng_phase1 ,
+        max_new_tokens=MAX_NEW_TOKENS , num_epochs=10
+    )
+
+    # PHASE II - Distill the Aligned Proxy into the Student (NLL + Weighted KL)
+    print('\n=== PHASE II: Student Distillation ===')
