@@ -52,3 +52,12 @@ def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
     proxy_response = proxy_full[: , input_ids.shape[1]:]  # [batch , max_new_tokens]
 
     return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
+
+# NOTE: FAKE CLASSSSSSSSSSSSS
+class BlackBoxTeacher:
+    def __init__(self , model , max_new_tokens):
+        self.model = model
+        self.max_new_tokens = max_new_tokens
+    def generate(self , input_ids , rng):
+        full_generation = autoregressive_generation(self.model , input_ids , rng , max_new_tokens=self.max_new_tokens)
+        return full_generation[: , input_ids.shape[1]:]

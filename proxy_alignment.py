@@ -4,16 +4,7 @@ import jax.numpy as jnp
 from flax import nnx
 import optax
 from transformer import TransformerConfig , CausalLanguageModel
-from utils import get_token_log_probs , collection , autoregressive_generation
-
-# NOTE: FAKE CLASSSSSSSSSSSSS
-class BlackBoxTeacher:
-    def __init__(self , model , max_new_tokens):
-        self.model = model
-        self.max_new_tokens = max_new_tokens
-    def generate(self , input_ids , rng):
-        full_generation = autoregressive_generation(self.model , input_ids , rng , max_new_tokens=self.max_new_tokens)
-        return full_generation[: , input_ids.shape[1]:]
+from utils import get_token_log_probs , collection , BlackBoxTeacher
 
 BETA = 0.1
 

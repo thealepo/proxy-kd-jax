@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from flax import nnx
 import optax
 from transformer import CausalLanguageModel, TransformerConfig
-from utils import get_token_log_probs , collection
+from utils import get_token_log_probs , collection , BlackBoxTeacher
 
 ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
 

@@ -10,7 +10,7 @@ class TransformerConfig:
     VOCAB_SIZE: int = 256
     SEQ_LEN: int = 32
     HIDDEN_SIZE: int = 64
-    MLP_HIDDEN_SIZE: int = 4 * 64
+    MLP_HIDDEN_SIZE: int = 4 * HIDDEN_SIZE
     N_HEADS: int = 4
     N_LAYERS: int = 2
 
