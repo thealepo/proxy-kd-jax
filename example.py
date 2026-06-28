@@ -52,3 +52,9 @@ if __name__ == "__main__":
 
     # PHASE II - Distill the Aligned Proxy into the Student (NLL + Weighted KL)
     print('\n=== PHASE II: Student Distillation ===')
+    student_optimizer = nnx.Optimizer(student_model , optax.adam(1e-3) , wrt=nnx.Param)
+    rng , rng_phase2 = jax.random.split(rng)
+    student_model = phase2.train(
+        teacher_model , proxy_model , student_model , student_optimizer , prompt_batches , rng_phase2 ,
+        max_new_tokens=MAX_NEW_TOKENS , num_epochs=10
+    )
