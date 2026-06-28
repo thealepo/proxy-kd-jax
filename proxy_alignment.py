@@ -162,3 +162,11 @@ if __name__ == "__main__":
     teacher_model = BlackBoxTeacher(teacher_transformer , max_new_tokens=MAX_NEW_TOKENS)
     optimizer = nnx.Optimizer(proxy_model , optax.adam(1e-3) , wrt=nnx.Param)
 
+    # RTG
+    rng , rng_data = jax.random.split(rng)
+    keys = jax.random.split(rng_data , NUM_BATCHES)
+    prompt_batches = [
+        jax.random.randint(key , (BATCH , PROMPT_LEN) , 0 , config.VOCAB_SIZE , dtype=jnp.int32) for key in keys
+    ]
+    # TEST 1
+    assert proxy_model(prompt_batches[0]).shape == (BATCH , PROMPT_LEN , config.VOCAB_SIZE) , f'wrong: {proxy_model(prompt_batches[0]).shape}'
