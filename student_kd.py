@@ -3,7 +3,7 @@ import jax.numpy as jnp
 from flax import nnx
 from proxy_alignment import get_token_log_probs
 
-ALPHA = ...
+ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
 
 def student_nll_loss(student_model , input_ids , teacher_response):
     token_log_probs = get_token_log_probs(student_model , input_ids , teacher_response)
@@ -21,17 +21,17 @@ def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
     def kl_weight(log_probs_proxy):
         # ocmpute mean and std
         mean = jnp.mean(log_probs_proxy , axis=0 , keepdims=True)
-        std = jnp.std(log_probs_proxy , axis=0 , keepdims=True) + 1e-8
+        std = jnp.std(log_probs_proxy , axis=0 , keepdims=True)
 
         # Inner
-        logits = (log_probs_proxy - mean) / std
+        logits = (log_probs_proxy - mean) / (std + 1e-8)
         return jax.nn.sigmoid(logits)
 
     # Logits
-    weight = kl_weight(log_probs_proxy)
+    weight = jax.lax.stop_gradient(kl_weight(log_probs_proxy)) # this is a fixed taget with no grad
     weighted_kl_loss = weight * ratio
 
-    return -jnp.mean(weighted_kl_loss.sum(-1))
+    return jnp.mean(weighted_kl_loss.sum(-1))
 
 @nnx.jit
 def train_step(proxy_model , proxy_response , student_model , optimizer , teacher_response , input_ids):
