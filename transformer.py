@@ -7,12 +7,12 @@ from dataclasses import dataclass
 # Configuration for the Tranformer architecture to be used
 @dataclass(frozen=True , kw_only=True , slots=True)
 class TransformerConfig:
-    VOCAB_SIZE = 256
-    SEQ_LEN = 32
-    HIDDEN_SIZE = 64
-    MLP_HIDDEN_SIZE = 4 * 64
-    N_HEADS = 4
-    N_LAYERS = 2
+    VOCAB_SIZE: int = 256
+    SEQ_LEN: int = 32
+    HIDDEN_SIZE: int = 64
+    MLP_HIDDEN_SIZE: int = 4 * 64
+    N_HEADS: int = 4
+    N_LAYERS: int = 2
 
 # MHSA
 class MultiHeadSelfAttention(nnx.Module):
