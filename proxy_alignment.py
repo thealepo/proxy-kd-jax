@@ -106,3 +106,9 @@ def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
 
     return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
 
+
+def train_epoch(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_new_tokens):
+    losses = []
+    for x in prompt_batches:
+        proxy_model_old = # NOTE: some way to snapshot or something
+        
