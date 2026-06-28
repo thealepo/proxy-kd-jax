@@ -34,7 +34,7 @@ def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
     return -jnp.mean(weighted_kl_loss.sum(-1))
 
 @nnx.jit
-def train_step():
+def train_step(proxy_model , proxy_response , student_model , optimizer , teacher_response , input_ids):
     def loss_fn(student_model):
         nll_loss = student_nll_loss(student_model , input_ids , teacher_response)
         weighted_kl_loss = student_kl_loss(proxy_model , proxy_response , student_model , input_ids)
