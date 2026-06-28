@@ -28,7 +28,7 @@ def generate(model , input_ids , rng):
     # NOTE: must replace black box model with a true API (irl, we wont get a prob distribution form a black box model)
 
     logits = model(input_ids)  # [batch , prompt_len , vocab_size]
-    log_probs = jax.nn.log_softmax(logits , axis=1)
+    log_probs = jax.nn.log_softmax(logits , axis=-1)
     next_token = jax.random.categorical(rng , logits[: , -1 , :] , axis=-1)
     return next_token , log_probs
 
@@ -37,7 +37,7 @@ def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
     total_len = prompt_len + max_new_tokens
 
     # Buffer
-    buffer = jnp.zeroes((batch , total_len) , jnp.int32).at[: , :prompt_len].set(prompt)
+    buffer = jnp.zeros((batch , total_len) , jnp.int32).at[: , :prompt_len].set(prompt)
 
     # body_fn for a fori_loop... decision to swtich
     def body_fn(i , carry):
@@ -65,10 +65,10 @@ def preference_loss(proxy_model , proxy_model_old , input_ids , y_winner , y_los
 
     # Ratios
     log_ratio_winner = log_probs_winner - log_probs_winner_old
-    log_ratio_loser = log_ratio_loser - log_probs_loser_old
+    log_ratio_loser = log_probs_loser - log_probs_loser_old
 
     # Logits
-    logits_dpo = BETA * (log_ratio_winner - log_probs_loser)
+    logits_dpo = BETA * (log_ratio_winner - log_ratio_loser)
     return -jnp.mean(jax.nn.log_sigmoid(logits_dpo))  # scalar
 
 def proxy_nll_loss(proxy_model , input_ids , teacher_response):
