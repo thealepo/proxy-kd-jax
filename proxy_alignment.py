@@ -145,6 +145,7 @@ def train(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_n
         mean_loss = train_epoch(
             teacher_model , proxy_model , optimizer , prompt_batches , rng_epoch , max_new_tokens
         )
+        print(f'Epoch: {epoch+1} , avg_loss: {mean_loss:.4f}')
 
     return proxy_model
 
