@@ -5,7 +5,7 @@ import optax
 from transformer import CausalLanguageModel, TransformerConfig
 from utils import get_token_log_probs , collection , BlackBoxTeacher
 
-ALPHA = 100 #paper value
+ALPHA = 100.0 #paper value
 
 def student_nll_loss(student_model , input_ids , teacher_response):
     token_log_probs = get_token_log_probs(student_model , input_ids , teacher_response)
