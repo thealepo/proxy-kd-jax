@@ -58,12 +58,19 @@ def proxy_nll_loss(teacher_label , proxy_distribution):
 
     return -jnp.mean(jnp.log(label_proxy_prob))
 
-def train_step(teacher_model , proxy_model , optimizer , batch):
+def train_step(teacher_model , state_proxy_model , state_proxy_model_old , optimizer , batch):
+    x , y_winner , y_loser , y_loser_probs = batch
 
+    def loss_fn(...):
+        dpo_loss = preference_loss(state_proxy_model , state_proxy_model_old , x , y_winner , y_loser)
+        nll_loss = proxy_nll_loss(y_winner , y_loser_probs)
+        return dpo_loss + nll_loss
 
-    loss , grads = nnx.value_and_grad(loss_fn)(proxy_model)
+    proxy_model = nnx.merge(graphdef_proxy , state_proxy_model)
+    loss , grads = nnx.value_and_grad(loss_fn)(...)
     optimizer.update(proxy_model , grads)
-    return old_state_proxy , loss
+    return state_proxy_model , loss
+
 
 
 def proxy_alignment(teacher_model , proxy_model , input_ids , rng):
