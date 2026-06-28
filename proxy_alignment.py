@@ -2,6 +2,17 @@
 import jax
 import jax.numpy as jnp
 from flax import nnx
+import optax
+from transformer import Transformer , TransformerConfig , CausalLanguageModel
+
+# NOTE: FAKE CLASSSSSSSSSSSSS
+class BlackBoxTeacher:
+    def __init__(self , model , max_new_tokens):
+        self.model = model
+        self.max_new_tokens = max_new_tokens
+    def generate(self , input_ids , rng):
+        full_generation = autoregressive_generation(self.model , input_ids , rng , max_new_tokens=self.max_new_tokens)
+        return full_generation[: , input_ids.shape[1]:]
 
 BETA = 0.1
 
@@ -143,4 +154,3 @@ if __name__ == "__main__":
     
     NUM_BATCHES , BATCH , PROMPT_LEN , MAX_NEW_TOKENS = 3 , 4 , 8 , 8
 
-    
