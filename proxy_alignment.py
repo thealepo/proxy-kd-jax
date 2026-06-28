@@ -110,5 +110,29 @@ def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
 def train_epoch(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_new_tokens):
     losses = []
     for x in prompt_batches:
-        proxy_model_old = # NOTE: some way to snapshot or something
-        
+        proxy_model_old = ... # NOTE: some way to snapshot or something
+
+        # RNG dealing
+        rng , rng_collection = jax.random.split(rng)
+
+        # Run collection
+        data = collection(
+            teacher_model , proxy_model , x , rng_collection , max_new_tokens
+        )
+
+        # Run a train_step
+        loss = train_step(proxy_model , optimizer , proxy_model_old , data)
+        losses.append(float(loss))
+
+    return sum(losses) / len(losses)
+
+def train(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_new_tokens , num_epochs=3):
+
+    # Run # of epochs
+    for epoch in range(num_epochs):
+        rng , rng_epoch = jax.random.split(rng)
+        mean_loss = train_epoch(
+            teacher_model , proxy_model , optimizer , prompt_batches , rng_epoch , max_new_tokens
+        )
+
+    return proxy_model
