@@ -32,3 +32,15 @@ def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
     weighted_kl_loss = weight * ratio
 
     return -jnp.mean(weighted_kl_loss.sum(-1))
+
+@nnx.jit
+def train_step():
+    def loss_fn(student_model):
+        nll_loss = student_nll_loss(student_model , input_ids , teacher_response)
+        weighted_kl_loss = student_kl_loss(proxy_model , proxy_response , student_model , input_ids)
+        return nll_loss + ALPHA * weighted_kl_loss
+
+    # Updates & Autograd
+    loss , grads = nnx.value_and_grad(loss_fn)(student_model)
+    optimizer.update(student_model , grads)
+    return loss
