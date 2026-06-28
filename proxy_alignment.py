@@ -58,5 +58,21 @@ def proxy_nll_loss(teacher_label , proxy_distribution):
 
     return -jnp.mean(jnp.log(label_proxy_prob))
 
+def train_step(teacher_model , proxy_model , optimizer , batch):
+
+
+    loss , grads = nnx.value_and_grad(loss_fn)(proxy_model)
+    optimizer.update(proxy_model , grads)
+    return old_state_proxy , loss
+
+
 def proxy_alignment(teacher_model , proxy_model , input_ids , rng):
-    pass
+    # rng splitting
+    rng , rng_gen_teacher , rng_gen_proxy = jax.random.split(rng , )
+
+    # sample responses
+    teacher_response = teacher_model.generate(input_ids , rng_gen_teacher)  # NOTE: this prolly must be a true API
+    proxy_response , proxy_distribution = generate(proxy_model , input_ids , rng_gen_proxy)
+
+    
+
