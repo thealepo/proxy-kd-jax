@@ -3,7 +3,7 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 import optax
-from transformer import Transformer , TransformerConfig , CausalLanguageModel
+from transformer import TransformerConfig , CausalLanguageModel
 
 # NOTE: FAKE CLASSSSSSSSSSSSS
 class BlackBoxTeacher:
