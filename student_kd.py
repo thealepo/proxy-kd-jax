@@ -18,13 +18,17 @@ def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
     ratio = log_probs_proxy - log_probs_student
 
     # Weihgt
-    def kl_weight(log_probs_proxy , input_ids , proxy_response):
+    def kl_weight(log_probs_proxy):
         # ocmpute mean and std
-        mean =
+        mean = jnp.mean(log_probs_proxy , axis=0)
         std = jnp.std(log_probs_proxy , axis=0 , keepdims=True)
 
+        # Inner
+        logits = (log_probs_proxy - mean) / std
+        return jax.nn.sigmoid(logits)
+
     # Logits
-    weight = kl_weight(log_probs_proxy , input_ids , proxy_response)
+    weight = kl_weight(log_probs_proxy)
     weighted_kl_loss = weight * ratio
 
     return -jnp.mean(weighted_kl_loss.sum(-1))
