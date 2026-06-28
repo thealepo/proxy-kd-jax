@@ -112,3 +112,10 @@ if __name__ == "__main__":
         jax.random.randint(key , (BATCH , PROMPT_LEN) , 0 , config.VOCAB_SIZE , dtype=jnp.int32) for key in keys
     ]
     assert student_model(prompt_batches[0]).shape == (BATCH , PROMPT_LEN , config.VOCAB_SIZE) , f'Wrong: {student_model(prompt_batches[0]).shape}'
+
+    # Full training
+    rng , rng_train = jax.random.split(rng)
+    train(
+        teacher_model , proxy_model , student_model , optimizer , prompt_batches , rng_train , max_new_tokens=MAX_NEW_TOKENS , num_epochs=3
+    )
+    print('Mock run complete: Phase II Student-KD')
