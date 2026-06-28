@@ -73,8 +73,12 @@ def train_step(state , state_old , batch):
     _ , new_state = nnx.split((proxy_model , optimizer))
     return new_state , loss
 
+def collection(teacher_model , proxy_model , input_ids , rng):
+    rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
 
-
+    # Responses
+    teacher_response = teacher_model.generate(input_ids , rng_teacher)  # real API call IRL
+    proxy_response = autoregressive_generation(proxy_model , input_ids , rng_proxy)  # NOTE: MAKE AN AUTOREGRESSIVE FUNC
 
     
 
