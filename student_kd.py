@@ -20,8 +20,8 @@ def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
     # Weihgt
     def kl_weight(log_probs_proxy):
         # ocmpute mean and std
-        mean = jnp.mean(log_probs_proxy , axis=0)
-        std = jnp.std(log_probs_proxy , axis=0 , keepdims=True)
+        mean = jnp.mean(log_probs_proxy , axis=0 , keepdims=True)
+        std = jnp.std(log_probs_proxy , axis=0 , keepdims=True) + 1e-8
 
         # Inner
         logits = (log_probs_proxy - mean) / std
