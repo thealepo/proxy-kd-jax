@@ -2,8 +2,8 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 import optax
-from proxy_alignment import MAX_NEW_TOKENS, BlackBoxTeacher, autoregressive_generation, get_token_log_probs, prompt_batches, teacher_transformer
 from transformer import CausalLanguageModel, TransformerConfig
+from utils import get_token_log_probs , collection
 
 ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
 
@@ -48,19 +48,6 @@ def train_step(proxy_model , student_model , optimizer , batch):
     loss , grads = nnx.value_and_grad(loss_fn)(student_model)
     optimizer.update(student_model , grads)
     return loss
-
-# DATA COLLECTION STEP
-# THE PROXY IS ALREADY ALIGNED AT THIS POINT
-def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens=256):
-    # RNG sutff
-    rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
-
-    # Responses
-    teacher_response = teacher_model.generate(input_ids , rng_teacher)  # IRL THIS IS AN API CALL
-    proxy_full = autoregressive_generation(proxy_model , input_ids , rng_proxy , max_new_tokens=max_new_tokens)
-    proxy_response = proxy_full[: , input_ids.shape[1]:]
-
-    return input_ids , teacher_response , proxy_response
 
 def train_epoch(teacher_model , proxy_model , student_model , optimizer , prompt_batches , rng , max_new_tokens):
     losses = []

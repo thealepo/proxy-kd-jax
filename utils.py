@@ -42,3 +42,13 @@ def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
     init_carry = (buffer , rng)
     buffer , _ = jax.lax.fori_loop(0 , max_new_tokens , body_fn , init_carry)
     return buffer
+
+def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
+    rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
+
+    # Responses
+    teacher_response = teacher_model.generate(input_ids , rng_teacher)  # real API call IRL
+    proxy_full = autoregressive_generation(proxy_model , input_ids , rng_proxy , max_new_tokens=max_new_tokens)  # [batch , prompt_len+max_new_tokens]
+    proxy_response = proxy_full[: , input_ids.shape[1]:]  # [batch , max_new_tokens]
+
+    return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser

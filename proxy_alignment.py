@@ -4,7 +4,7 @@ import jax.numpy as jnp
 from flax import nnx
 import optax
 from transformer import TransformerConfig , CausalLanguageModel
-from utils import get_token_log_probs , autoregressive_generation
+from utils import get_token_log_probs , collection , autoregressive_generation
 
 # NOTE: FAKE CLASSSSSSSSSSSSS
 class BlackBoxTeacher:
@@ -50,16 +50,6 @@ def train_step(proxy_model , optimizer , proxy_model_old , batch):
     loss , grads = nnx.value_and_grad(loss_fn)(proxy_model)
     optimizer.update(proxy_model , grads)
     return loss
-
-def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
-    rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
-
-    # Responses
-    teacher_response = teacher_model.generate(input_ids , rng_teacher)  # real API call IRL
-    proxy_full = autoregressive_generation(proxy_model , input_ids , rng_proxy , max_new_tokens=max_new_tokens)  # [batch , prompt_len+max_new_tokens]
-    proxy_response = proxy_full[: , input_ids.shape[1]:]  # [batch , max_new_tokens]
-
-    return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
 
 def snapshot(model):
     # creates a copy of a model at a specific iteration
