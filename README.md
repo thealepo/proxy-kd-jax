@@ -6,7 +6,7 @@ A JAX & Flax NNX implementation of **["Knowledge Distillation of Black-Box Large
 
 ---
 
-This implementation serves as an open-source resource for the knowledge distillation techniques introduced in the paper — namely the use of a **Proxy** model, which is aligned to the **Teacher *(Black-Box Proprietary Model)*** so it can serve as a mimic of the teacher's probability distributions. As far as I can tell there's no public implementation of this paper, so here's one in JAX.
+This implementation serves as an open-source resource for the knowledge distillation techniques introduced in the paper. Namely, the use of a **Proxy** model, which is aligned to the **Teacher *(Black-Box Proprietary Model)*** so it can serve as a mimic of the teacher's probability distributions.
 
 The paper introduces a training paradigm that shows up in two phases:
 
