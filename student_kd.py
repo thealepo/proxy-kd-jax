@@ -5,12 +5,15 @@ import optax
 from transformer import CausalLanguageModel, TransformerConfig
 from utils import get_token_log_probs , collection , BlackBoxTeacher
 
-ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
+ALPHA = 100 #paper value
 
 def student_nll_loss(student_model , input_ids , teacher_response):
     token_log_probs = get_token_log_probs(student_model , input_ids , teacher_response)
     return -jnp.mean(token_log_probs.sum(-1))
 
+def kl_weight(proxy_model , input_ids , teacher_response , mu , gamma):
+    log_probs = get_token_log_probs(proxy_model , input_ids , teacher_response).sum(-1)
+    return jax.lax.stop_gradient(jax.nn.sigmoid((log_probs - mu) / (gamma + 1e-8)))
 def student_kl_loss(proxy_model , student_model , input_ids , teacher_response , weight):
     full = jnp.concatenate([input_ids,teacher_response] , axis=-1)
     log_prob_proxy = jax.nn.log_softmax(proxy_model(full) , -1)[: , :-1 , :]
