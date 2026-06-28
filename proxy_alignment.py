@@ -4,7 +4,7 @@ import jax.numpy as jnp
 from flax import nnx
 import optax
 from transformer import TransformerConfig , CausalLanguageModel
-from utils import get_token_log_probs
+from utils import get_token_log_probs , autoregressive_generation
 
 # NOTE: FAKE CLASSSSSSSSSSSSS
 class BlackBoxTeacher:
@@ -16,30 +16,6 @@ class BlackBoxTeacher:
         return full_generation[: , input_ids.shape[1]:]
 
 BETA = 0.1
-
-def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
-    batch , prompt_len = prompt.shape
-    total_len = prompt_len + max_new_tokens
-
-    # Buffer
-    buffer = jnp.zeros((batch , total_len) , jnp.int32).at[: , :prompt_len].set(prompt)
-
-    # body_fn for a fori_loop... decision to swtich
-    def body_fn(i , carry):
-        buffer , rng = carry
-        rng , rng_gen = jax.random.split(rng)
-
-        logits = model(buffer)  # [batch , total_len , vocab_size]
-        next_token = jax.random.categorical(
-            rng_gen , logits[: , prompt_len+i-1 , :] , axis=-1
-        )  # [batch]
-        buffer = buffer.at[: , prompt_len+i].set(next_token)
-        return buffer , rng
-
-    # Actual looping
-    init_carry = (buffer , rng)
-    buffer , _ = jax.lax.fori_loop(0 , max_new_tokens , body_fn , init_carry)
-    return buffer
 
 def preference_loss(proxy_model , proxy_model_old , input_ids , y_winner , y_loser):
     # from Per-Token to Per-Sequence by summing the sequence length

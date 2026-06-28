@@ -1,7 +1,7 @@
 import jax
 import jax.numpy as jnp
 from flax import nnx
-from proxy_alignment import get_token_log_probs
+from proxy_alignment import autoregressive_generation, get_token_log_probs
 
 ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
 
@@ -46,3 +46,13 @@ def train_step(proxy_model , student_model , optimizer , batch):
     loss , grads = nnx.value_and_grad(loss_fn)(student_model)
     optimizer.update(student_model , grads)
     return loss
+
+# DATA COLLECTION STEP
+# THE PROXY IS ALREADY ALIGNED AT THIS POINT
+def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens=256):
+    # RNG sutff
+    rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
+
+    # Responses
+    teacher_response = teacher_model.generate(input_ids , rng_teacher)  # IRL THIS IS AN API CALL
+    proxy_full = autoregressive_generation(proxy_model , )

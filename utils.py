@@ -1,3 +1,6 @@
+import jax
+import jax.numpy as jnp
+
 def get_token_log_probs(model , input_ids , response):
     # input ids: [batch , prompt_len] | response: [batch , response_len]
     full_seq = jnp.concatenate([input_ids,response] , axis=-1)  # [batch , prompt+response]
@@ -15,3 +18,27 @@ def get_token_log_probs(model , input_ids , response):
     # Keep only the response
     response_len = response.shape[-1]
     return token_log_probs[: , -response_len:]  # [batch , response_len]
+
+def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
+    batch , prompt_len = prompt.shape
+    total_len = prompt_len + max_new_tokens
+
+    # Buffer
+    buffer = jnp.zeros((batch , total_len) , jnp.int32).at[: , :prompt_len].set(prompt)
+
+    # body_fn for a fori_loop... decision to swtich
+    def body_fn(i , carry):
+        buffer , rng = carry
+        rng , rng_gen = jax.random.split(rng)
+
+        logits = model(buffer)  # [batch , total_len , vocab_size]
+        next_token = jax.random.categorical(
+            rng_gen , logits[: , prompt_len+i-1 , :] , axis=-1
+        )  # [batch]
+        buffer = buffer.at[: , prompt_len+i].set(next_token)
+        return buffer , rng
+
+    # Actual looping
+    init_carry = (buffer , rng)
+    buffer , _ = jax.lax.fori_loop(0 , max_new_tokens , body_fn , init_carry)
+    return buffer
