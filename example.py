@@ -58,3 +58,5 @@ if __name__ == "__main__":
         teacher_model , proxy_model , student_model , student_optimizer , prompt_batches , rng_phase2 ,
         max_new_tokens=MAX_NEW_TOKENS , num_epochs=10
     )
+
+    print('\nFULL PROXY-KD PIPELINE COMPLETE (Phase I -> Phase II)')
