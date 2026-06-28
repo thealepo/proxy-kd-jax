@@ -33,39 +33,20 @@ def generate(model , input_ids , rng):
     return next_token , log_probs
 
 
-def preference_loss(state_proxy_model , state_proxy_model_old , input_ids , y_winner , y_loser):
-    def get_token_log_probs(model , y):
-        full_seq = jnp.concatenate([input_ids,y] , axis=-1)
-        logits = model(full_seq)
-        log_probs = jax.nn.log_softmax(logits , axis=-1)
+def preference_loss(proxy_model , proxy_model_old , input_ids , y_winner , y_loser):
+    # from Per-Token to Per-Sequence by summing the sequence length
+    log_probs_winner = get_token_log_probs(proxy_model , input_ids , y_winner).sum(-1)  #[b]
+    log_probs_loser = get_token_log_probs(proxy_model , input_ids , y_loser).sum(-1)
+    log_probs_winner_old = get_token_log_probs(proxy_model_old , input_ids , y_winner).sum(-1)
+    log_probs_loser_old = get_token_log_probs(proxy_model_old , input_ids , y_loser).sum(-1)
 
-        targets = full_seq[: , 1:]
-        log_probs = log_probs[: , :-1 , :]
+    # Ratios
+    log_ratio_winner = log_probs_winner - log_probs_winner_old
+    log_ratio_loser = log_ratio_loser - log_probs_loser_old
 
-        token_log_probs = jnp.take_along_axis(
-            log_probs , targets[... , jnp.newaxis] , axis=-1
-        ).squeeze(-1)
-
-        return token_log_probs
-
-    # merging
-    proxy = nnx.merge(graphdef_proxy , state_proxy_model)
-    old_proxy = nnx.merge(graphdef_proxy , state_proxy_model_old)
-
-    # log probs
-    proxy_log_probs_winner = get_token_log_probs(proxy , y_winner)
-    proxy_log_probs_loser = get_token_log_probs(proxy , y_loser)
-    old_proxy_log_probs_winner = get_token_log_probs(old_proxy , y_winner)
-    old_proxy_log_probs_loser = get_token_log_probs(old_proxy , y_loser)
-
-    # DPO ratios
-    log_ratio_winner = proxy_log_probs_winner - old_proxy_log_probs_winner
-    log_ratio_loser = proxy_log_probs_loser - old_proxy_log_probs_loser
-
-    # Loss
-    logits_dpo = BETA * (log_ratio_winner - log_ratio_loser)
-
-    return -jnp.mean(jax.nn.log_sigmoid(logits_dpo))
+    # Logits
+    logits_dpo = BETA * (log_ratio_winner - log_probs_loser)
+    return -jnp.mean(jax.nn.log_sigmoid(logits_dpo))  # scalar
 
 def proxy_nll_loss(teacher_label , proxy_distribution):
     label_proxy_prob = proxy_distribution(jnp.arange(teacher_label.shape[0]) , teacher_label)
