@@ -151,6 +151,14 @@ def train(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_n
 
 # MOCK RUN
 if __name__ == "__main__":
-    
+    # Setup
+    config = TransformerConfig()
     NUM_BATCHES , BATCH , PROMPT_LEN , MAX_NEW_TOKENS = 3 , 4 , 8 , 8
+
+    # Setup v2 (RNGs, models, optimizer)
+    rng = jax.random.PRNGKey(42)
+    proxy_model = CausalLanguageModel(config , rngs=nnx.Rngs(0))
+    teacher_transformer = CausalLanguageModel(config , rngs=nnx.Rngs(1))
+    teacher_model = BlackBoxTeacher(teacher_transformer , max_new_tokens=MAX_NEW_TOKENS)
+    optimizer = nnx.Optimizer(proxy_model , optax.adam(1e-3) , wrt=nnx.Param)
 
