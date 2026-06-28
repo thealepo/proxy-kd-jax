@@ -121,7 +121,7 @@ def snapshot(model):
 def train_epoch(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_new_tokens):
     losses = []
     for x in prompt_batches:
-        proxy_model_old = ... # NOTE: some way to snapshot or something
+        proxy_model_old = snapshot(proxy_model)  # previous-iteration reference (pi_old)
 
         # RNG dealing
         rng , rng_collection = jax.random.split(rng)
