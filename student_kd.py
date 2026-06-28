@@ -66,9 +66,9 @@ def train(teacher_model , proxy_model , student_model , optimizer , prompt_batch
     for epoch in range(num_epochs):
         rng , rng_epoch = jax.random.split(rng)
         mean_loss = train_epoch(
-            teacher_model , proxy_model , student_model , optimizer , prompt_batches , rng , max_new_tokens
+            teacher_model , proxy_model , student_model , optimizer , prompt_batches , rng_epoch , max_new_tokens
         )
-        print(f'Epoch; {epoch+1} , avg_loss: {mean_loss:.4f}')
+        print(f'Epoch: {epoch+1} , avg_loss: {mean_loss:.4f}')
 
     return student_model
 
