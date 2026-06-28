@@ -11,29 +11,14 @@ def student_nll_loss(student_model , input_ids , teacher_response):
     token_log_probs = get_token_log_probs(student_model , input_ids , teacher_response)
     return -jnp.mean(token_log_probs.sum(-1))
 
-def student_kl_loss(proxy_model , proxy_response , student_model , input_ids):
-    # gather log probs
-    log_probs_proxy = get_token_log_probs(proxy_model , input_ids , proxy_response)
-    log_probs_student = get_token_log_probs(student_model , input_ids , proxy_response)
-
-    # Ratio
-    ratio = log_probs_proxy - log_probs_student
-
-    # Weihgt
-    def kl_weight(log_probs_proxy):
-        # ocmpute mean and std
-        mean = jnp.mean(log_probs_proxy , axis=0 , keepdims=True)
-        std = jnp.std(log_probs_proxy , axis=0 , keepdims=True)
-
-        # Inner
-        logits = (log_probs_proxy - mean) / (std + 1e-8)
-        return jax.nn.sigmoid(logits)
-
-    # Logits
-    weight = jax.lax.stop_gradient(kl_weight(log_probs_proxy)) # this is a fixed taget with no grad
-    weighted_kl_loss = weight * ratio
-
-    return jnp.mean(weighted_kl_loss.sum(-1))
+def student_kl_loss(proxy_model , student_model , input_ids , teacher_response , weight):
+    full = jnp.concatenate([input_ids,teacher_response] , axis=-1)
+    log_prob_proxy = jax.nn.log_softmax(proxy_model(full) , -1)[: , :-1 , :]
+    log_prob_student = jax.nn.log_softmax(student_model(full) , -1)[: , :-1 , :]
+    kl_per_pos = jnp.sum(jnp.exp(log_prob_proxy) * (log_prob_proxy - log_prob_student) , axis=-1)
+    response_shape = teacher_response.shape[-1]
+    kl_per_seq = kl_per_pos[: , -response_shape:].sum(-1)
+    return jnp.mean(weight * kl_per_seq)
 
 @nnx.jit
 def train_step(proxy_model , student_model , optimizer , batch):
