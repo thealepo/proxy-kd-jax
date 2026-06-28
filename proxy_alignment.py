@@ -48,35 +48,32 @@ def preference_loss(proxy_model , proxy_model_old , input_ids , y_winner , y_los
     logits_dpo = BETA * (log_ratio_winner - log_probs_loser)
     return -jnp.mean(jax.nn.log_sigmoid(logits_dpo))  # scalar
 
-def proxy_nll_loss(teacher_label , proxy_distribution):
-    label_proxy_prob = proxy_distribution(jnp.arange(teacher_label.shape[0]) , teacher_label)
+def proxy_nll_loss(proxy_model , input_ids , teacher_response):
+    token_log_probs = get_token_log_probs(proxy_model , input_ids , teacher_response)  # [batch , response_len]
+    return -jnp.mean(token_log_probs.sum(-1))  # scalar
 
-    return -jnp.mean(jnp.log(label_proxy_prob))
-
+@jax.jit
 def train_step(state , state_old , batch):
     x , y_winner , y_loser = batch
 
-    # Reconstructing models
+    # Merges
     proxy_model , optimizer = nnx.merge(graphdef , state)
-    proxy_model_old = nnx.merge(graphdef , state_old)
+    proxy_model_old = nnx.merge(graphdef_proxy , state_old)
 
+    # Loss
     def loss_fn(proxy_model):
         dpo_loss = preference_loss(proxy_model , proxy_model_old , x , y_winner , y_loser)
-        nll_loss = proxy_nll_loss(y_winner , y_loser_probs)
+        nll_loss = proxy_nll_loss(proxy_model , x , y_winner)
         return dpo_loss + nll_loss
 
-    proxy_model = nnx.merge(graphdef_proxy , state_proxy_model)
-    loss , grads = nnx.value_and_grad(loss_fn)(...)
+    # Updates
+    loss , grads = nnx.value_and_grad(loss_fn)(proxy_model)
     optimizer.update(proxy_model , grads)
-    return state_proxy_model , loss
 
-def collection(teacher_model , proxy_model , input_ids , rng):
-    # rng splitting
-    rng , rng_gen_teacher , rng_gen_proxy = jax.random.split(rng , )
+    _ , new_state = nnx.split((proxy_model , optimizer))
+    return new_state , loss
 
-    # sample responses
-    teacher_response = teacher_model.generate(input_ids , rng_gen_teacher)  # NOTE: this prolly must be a true API
-    proxy_response , proxy_distribution = generate(proxy_model , input_ids , rng_gen_proxy)
+
 
 
     
