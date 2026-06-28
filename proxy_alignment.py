@@ -34,15 +34,6 @@ def get_token_log_probs(model , input_ids , response):
     response_len = response.shape[-1]
     return token_log_probs[: , -response_len:]  # [batch , response_len]
 
-def generate(model , input_ids , rng):
-    # wnat to return the probability distribution and hard output
-    # NOTE: must replace black box model with a true API (irl, we wont get a prob distribution form a black box model)
-
-    logits = model(input_ids)  # [batch , prompt_len , vocab_size]
-    log_probs = jax.nn.log_softmax(logits , axis=-1)
-    next_token = jax.random.categorical(rng , logits[: , -1 , :] , axis=-1)
-    return next_token , log_probs
-
 def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
     batch , prompt_len = prompt.shape
     total_len = prompt_len + max_new_tokens
