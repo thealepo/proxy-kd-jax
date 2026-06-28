@@ -100,7 +100,7 @@ def train(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_n
     return proxy_model
 
 
-# MOCK RUN
+# MOCK RUN (phase i)
 if __name__ == "__main__":
     # Setup
     config = TransformerConfig()

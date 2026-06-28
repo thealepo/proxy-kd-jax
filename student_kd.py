@@ -1,7 +1,9 @@
 import jax
 import jax.numpy as jnp
 from flax import nnx
-from proxy_alignment import autoregressive_generation, get_token_log_probs
+import optax
+from proxy_alignment import MAX_NEW_TOKENS, BlackBoxTeacher, autoregressive_generation, get_token_log_probs, teacher_transformer
+from transformer import CausalLanguageModel, TransformerConfig
 
 ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
 
@@ -82,3 +84,23 @@ def train(teacher_model , proxy_model , student_model , optimizer , prompt_batch
         print(f'Epoch; {epoch+1} , avg_loss: {mean_loss:.4f}')
 
     return student_model
+
+# MOCK RUN (phase ii)
+if __name__ == "__main__":
+    config = TransformerConfig()
+    NUM_BATCHES , BATCH , PROMPT_LEN , MAX_NEW_TOKENS = 3 , 4 , 8 , 8
+
+    # RNG
+    rng = jax.random.PRNGKey(42)
+
+    
+    # Proxy: pretend its already aligned from phase i: forzen, only sampled from
+    proxy_model = CausalLanguageModel(config , rngs=nnx.Rngs(1))
+    # Student: the model we distill into (truthfully, smaller than Proxy)
+    student_model = CausalLanguageModel(config , rngs=nnx.Rngs(2))
+    # Teacher mock
+    teacher_transformer = CausalLanguageModel(config , rngs=nnx.Rngs(3))
+    teacher_model = BlackBoxTeacher(teacher_transformer , max_new_tokens=MAX_NEW_TOKENS)
+
+    # Optimizer (nnx)
+    optimizer = nnx.Optimizer(student_model , optax.adam(1e-3) , wrt=nnx.Param)
