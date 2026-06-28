@@ -55,4 +55,7 @@ def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens=25
 
     # Responses
     teacher_response = teacher_model.generate(input_ids , rng_teacher)  # IRL THIS IS AN API CALL
-    proxy_full = autoregressive_generation(proxy_model , )
+    proxy_full = autoregressive_generation(proxy_model , input_ids , rng_proxy , max_new_tokens=max_new_tokens)
+    proxy_response = proxy_full[: , input_ids.shape[1]:]
+
+    return input_ids , teacher_response , proxy_response
