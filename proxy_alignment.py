@@ -101,9 +101,9 @@ def collection(teacher_model , proxy_model , input_ids , rng):
 
     # Responses
     teacher_response = teacher_model.generate(input_ids , rng_teacher)  # real API call IRL
-    proxy_response = autoregressive_generation(proxy_model , input_ids , rng_proxy)  # NOTE: MAKE AN AUTOREGRESSIVE FUNC
+    proxy_full = autoregressive_generation(proxy_model , input_ids , rng_proxy)  # [batch , prompt_len+max_new_tokens]
+    proxy_response = proxy_full[: , input_ids.shape[1]:]  # [batch , max_new_tokens]
 
     return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
-
 
 
