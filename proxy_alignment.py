@@ -104,6 +104,8 @@ def snapshot(model):
     # creates a copy of a model at a specific iteration
     # this is for the previous iteration of the proxy model
     # as seen in equation 4 of the paper
+    graphdef , state = nnx.split(model)
+    return nnx.merge(graphdef , jax.tree.map(lambda a: a , state))
 
 def train_epoch(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_new_tokens):
     losses = []
