@@ -68,6 +68,6 @@ def train_epoch(teacher_model , proxy_model , student_model , optimizer , prompt
         rng , rng_collection = jax.random.split(rng)
         batch = collection(teacher_model , proxy_model , x , rng_collection , max_new_tokens)
         loss = train_step(proxy_model , student_model , optimizer , batch)
-        losses.append(float(losses))
+        losses.append(float(loss))
 
     return sum(losses) / len(losses)
