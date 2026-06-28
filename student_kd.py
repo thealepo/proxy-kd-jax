@@ -2,7 +2,7 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 import optax
-from proxy_alignment import MAX_NEW_TOKENS, BlackBoxTeacher, autoregressive_generation, get_token_log_probs, teacher_transformer
+from proxy_alignment import MAX_NEW_TOKENS, BlackBoxTeacher, autoregressive_generation, get_token_log_probs, prompt_batches, teacher_transformer
 from transformer import CausalLanguageModel, TransformerConfig
 
 ALPHA = ...  # NOTE: ADD LATER (pay attn to paper)
@@ -104,3 +104,11 @@ if __name__ == "__main__":
 
     # Optimizer (nnx)
     optimizer = nnx.Optimizer(student_model , optax.adam(1e-3) , wrt=nnx.Param)
+
+    # RNG
+    rng , rng_data = jax.random.split(rng)
+    keys = jax.random.split(rng_data , NUM_BATCHES)
+    prompt_batches = [
+        jax.random.randint(key , (BATCH , PROMPT_LEN) , 0 , config.VOCAB_SIZE , dtype=jnp.int32) for key in keys
+    ]
+    assert student_model(prompt_batches[0]).shape == (BATCH , PROMPT_LEN , config.VOCAB_SIZE) , f'Wrong: {student_model(prompt_batches[0]).shape}'
