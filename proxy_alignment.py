@@ -32,6 +32,29 @@ def generate(model , input_ids , rng):
     next_token = jax.random.categorical(rng , logits[: , -1 , :] , axis=-1)
     return next_token , log_probs
 
+def autoregressive_generation(model , prompt , rng , max_new_tokens=256):
+    batch , prompt_len = prompt.shape
+    total_len = prompt_len + max_new_tokens
+
+    # Buffer
+    buffer = jnp.zeroes((batch , total_len) , jnp.int32).at[: , :prompt_len].set(prompt)
+
+    # body_fn for a fori_loop... decision to swtich
+    def body_fn(i , carry):
+        buffer , rng = carry
+        rng , rng_gen = jax.random.split(rng)
+
+        logits = model(buffer)  # [batch , total_len , vocab_size]
+        next_token = jax.random.categorical(
+            rng_gen , logits[: , prompt_len+i-1 , :] , axis=-1
+        )  # [batch]
+        buffer = buffer.at[: , prompt_len+i].set(next_token)
+        return buffer , rng
+
+    # Actual looping
+    init_carry = (buffer , rng)
+    buffer , _ = jax.lax.fori_loop(0 , max_new_tokens , body_fn , init_carry)
+    return buffer
 
 def preference_loss(proxy_model , proxy_model_old , input_ids , y_winner , y_loser):
     # from Per-Token to Per-Sequence by summing the sequence length
@@ -81,5 +104,6 @@ def collection(teacher_model , proxy_model , input_ids , rng):
     proxy_response = autoregressive_generation(proxy_model , input_ids , rng_proxy)  # NOTE: MAKE AN AUTOREGRESSIVE FUNC
 
     return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
+
 
 
