@@ -3,6 +3,8 @@ import jax
 import jax.numpy as jnp
 from flax import nnx
 
+BETA = 0.1
+
 def generate(model , input_ids , rng):
     # wnat to return the probability distribution and hard output
     # NOTE: must replace black box model with a true API (irl, we wont get a prob distribution form a black box model)
@@ -58,11 +60,15 @@ def proxy_nll_loss(teacher_label , proxy_distribution):
 
     return -jnp.mean(jnp.log(label_proxy_prob))
 
-def train_step(teacher_model , state_proxy_model , state_proxy_model_old , optimizer , batch):
-    x , y_winner , y_loser , y_loser_probs = batch
+def train_step(state , state_old , batch):
+    x , y_winner , y_loser = batch
 
-    def loss_fn(...):
-        dpo_loss = preference_loss(state_proxy_model , state_proxy_model_old , x , y_winner , y_loser)
+    # Reconstructing models
+    proxy_model , optimizer = nnx.merge(graphdef , state)
+    proxy_model_old = nnx.merge(graphdef , state_old)
+
+    def loss_fn(proxy_model):
+        dpo_loss = preference_loss(proxy_model , proxy_model_old , x , y_winner , y_loser)
         nll_loss = proxy_nll_loss(y_winner , y_loser_probs)
         return dpo_loss + nll_loss
 
@@ -71,15 +77,14 @@ def train_step(teacher_model , state_proxy_model , state_proxy_model_old , optim
     optimizer.update(proxy_model , grads)
     return state_proxy_model , loss
 
-
-
-def proxy_alignment(teacher_model , proxy_model , input_ids , rng):
+def collection(teacher_model , proxy_model , input_ids , rng):
     # rng splitting
     rng , rng_gen_teacher , rng_gen_proxy = jax.random.split(rng , )
 
     # sample responses
     teacher_response = teacher_model.generate(input_ids , rng_gen_teacher)  # NOTE: this prolly must be a true API
     proxy_response , proxy_distribution = generate(proxy_model , input_ids , rng_gen_proxy)
+
 
     
 
