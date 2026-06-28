@@ -75,26 +75,20 @@ def proxy_nll_loss(proxy_model , input_ids , teacher_response):
     token_log_probs = get_token_log_probs(proxy_model , input_ids , teacher_response)  # [batch , response_len]
     return -jnp.mean(token_log_probs.sum(-1))  # scalar
 
-@jax.jit
-def train_step(state , state_old , batch):
+@nnx.jit
+def train_step(proxy_model , optimizer , proxy_model_old , batch):
     x , y_winner , y_loser = batch
 
-    # Merges
-    proxy_model , optimizer = nnx.merge(graphdef , state)
-    proxy_model_old = nnx.merge(graphdef_proxy , state_old)
-
-    # Loss
+    # Loss fn
     def loss_fn(proxy_model):
         dpo_loss = preference_loss(proxy_model , proxy_model_old , x , y_winner , y_loser)
         nll_loss = proxy_nll_loss(proxy_model , x , y_winner)
         return dpo_loss + nll_loss
 
-    # Updates
+    # Updates and autograd
     loss , grads = nnx.value_and_grad(loss_fn)(proxy_model)
     optimizer.update(proxy_model , grads)
-
-    _ , new_state = nnx.split((proxy_model , optimizer))
-    return new_state , loss
+    return loss
 
 def collection(teacher_model , proxy_model , input_ids , rng , max_new_tokens):
     rng , rng_teacher , rng_proxy = jax.random.split(rng , 3)
