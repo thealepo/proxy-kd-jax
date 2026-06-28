@@ -10,9 +10,14 @@ class TransformerConfig:
     VOCAB_SIZE: int = 256
     SEQ_LEN: int = 32
     HIDDEN_SIZE: int = 64
-    MLP_HIDDEN_SIZE: int = 4 * HIDDEN_SIZE
+    MLP_HIDDEN_SIZE: int = 0  # auto-derive 4*HIDDEN_SIZE per instance
     N_HEADS: int = 4
     N_LAYERS: int = 2
+
+    def __post_init__(self):
+        if self.MLP_HIDDEN_SIZE == 0:
+            object.__setattr__(self , 'MLP_HIDDEN_SIZE' , 4 * self.HIDDEN_SIZE)
+        assert self.HIDDEN_SIZE % self.N_HEADS == 0 , f'hidden size must be divisible by n_heads'
 
 # MHSA
 class MultiHeadSelfAttention(nnx.Module):
