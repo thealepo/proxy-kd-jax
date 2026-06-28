@@ -136,3 +136,11 @@ def train(teacher_model , proxy_model , optimizer , prompt_batches , rng , max_n
         )
 
     return proxy_model
+
+
+# MOCK RUN
+if __name__ == "__main__":
+    
+    NUM_BATCHES , BATCH , PROMPT_LEN , MAX_NEW_TOKENS = 3 , 4 , 8 , 8
+
+    

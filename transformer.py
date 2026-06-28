@@ -102,6 +102,14 @@ class Transformer(nnx.Module):
         x = self.ln_f(x)
         return x  # [batch , seq_len , hidden_size]
 
+class CausalLanguageModel(nnx.Module):
+    def __init__(self , config: TransformerConfig , rngs: nnx.Rngs):
+        self.backbone = Transformer(config , rngs=rngs)
+        self.lm_head = nnx.Linear(config.HIDDEN_SIZE , config.VOCAB_SIZE , use_bias=False , rngs=rngs)
+
+    def __call__(self , input_ids):
+        return self.lm_head(self.backbone(input_ids))
+
 # quick test
 if __name__ == "__main__":
     config = TransformerConfig()
