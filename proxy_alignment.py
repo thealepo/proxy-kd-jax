@@ -170,3 +170,10 @@ if __name__ == "__main__":
     ]
     # TEST 1
     assert proxy_model(prompt_batches[0]).shape == (BATCH , PROMPT_LEN , config.VOCAB_SIZE) , f'wrong: {proxy_model(prompt_batches[0]).shape}'
+
+    rng , rng_train = jax.random.split(rng)
+    train(
+        teacher_model , proxy_model , optimizer , prompt_batches , rng_train ,
+        max_new_tokens=MAX_NEW_TOKENS , num_epochs=3
+    )
+    print('MOCK COMPLETE... PHASE I PROXY-KD')
