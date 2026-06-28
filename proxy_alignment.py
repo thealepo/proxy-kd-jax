@@ -80,5 +80,6 @@ def collection(teacher_model , proxy_model , input_ids , rng):
     teacher_response = teacher_model.generate(input_ids , rng_teacher)  # real API call IRL
     proxy_response = autoregressive_generation(proxy_model , input_ids , rng_proxy)  # NOTE: MAKE AN AUTOREGRESSIVE FUNC
 
-    
+    return input_ids , teacher_response , proxy_response  # x , y_winner , y_loser
+
 
